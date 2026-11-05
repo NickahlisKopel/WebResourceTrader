@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Merchant's Path</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LZ-String for Save Compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Outfit:wght@400;600;700&family=Poppins:wght@400;600;700&family=Quicksand:wght@400;600;700&family=Rubik:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: var(--font-main, 'Inter', sans-serif);
+            overscroll-behavior-y: none; 
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--bg-main) !important; 
+            color: var(--text-main) !important;
+            /* The town SVG background will be applied here dynamically via JS */
+            background-repeat: repeat;
+            transition: background-image 0.5s ease-in-out;
+        }
+        
+        ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #toast-container {
+            position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+            z-index: 50; display: flex; flex-direction: column; gap: 10px;
+            width: 90%; max-width: 400px; pointer-events: none;
+        }
+        .toast {
+            background: rgba(15, 23, 42, 0.95); color: white; padding: 12px 20px;
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem; text-align: center;
+            animation: slideDown 0.3s ease-out forwards, fadeOut 0.5s ease-in 2.5s forwards;
+            pointer-events: auto;
+        }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        nav { scrollbar-width: none; }
+
+        /* APPEARANCE */
+        :root, [data-mode="light"] {
+            --bg-main: #f8fafc; --bg-surface: #ffffff; --bg-sub: #f1f5f9;
+            --text-main: #1e293b; --text-muted: #64748b;
+            --border-color: #e2e8f0; --nav-bg: #ffffff; --texture: none;
+        }
+        
+        [data-mode="dark"] {
+            --bg-main: #0f172a; --bg-surface: #1e293b; --bg-sub: #0f172a;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border-color: #334155; --nav-bg: #1e293b;
+        }
+
+        [data-accent="default"] {
+            --color-primary: #4f46e5; --color-header: #4338ca;
+        }
+        
+        [data-accent="ocean"] {
+            --color-primary: #0ea5e9; --color-header: #0369a1;
+        }
+        
+        [data-accent="crimson"] {
+            --color-primary: #e11d48; --color-header: #be123c;
+        }
+        
+        [data-accent="forest"] {
+            --color-primary: #16a34a; --color-header: #15803d;
+        }
+
+        [data-accent="neon"] {
+            --color-primary: #f0abfc; --color-header: #09090b;
+        }
+
+        [data-accent="gold"] {
+            --color-primary: #d97706; --color-header: #b45309;
+        }
+
+        [data-accent="cyberpunk"] {
+            --color-primary: #ec4899; --color-header: #0f172a;
+        }
+
+        [data-accent="pink"] { --color-primary: #ec4899; --color-header: #be185d; }
+        [data-accent="orange"] { --color-primary: #f97316; --color-header: #c2410c; }
+        [data-accent="teal"] { --color-primary: #14b8a6; --color-header: #0f766e; }
+        [data-accent="cyan"] { --color-primary: #06b6d4; --color-header: #0e7490; }
+        [data-accent="emerald"] { --color-primary: #10b981; --color-header: #047857; }
+        [data-accent="fuchsia"] { --color-primary: #d946ef; --color-header: #a21caf; }
+        [data-accent="slate"] { --color-primary: #64748b; --color-header: #334155; }
+        [data-accent="lime"] { --color-primary: #84cc16; --color-header: #4d7c0f; }
+        [data-accent="amber"] { --color-primary: #f59e0b; --color-header: #b45309; }
+        [data-accent="violet"] { --color-primary: #8b5cf6; --color-header: #5b21b6; }
+
+        /* TEXTURES */
+        [data-texture="paper"] { --texture: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.5"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>'); }
+        [data-texture="grid"] { --texture: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px); }
+        [data-texture="stripes"] { --texture: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 10px, transparent 10px, transparent 20px); }
+        
+        [data-mode="dark"][data-texture="grid"] { 
+            --texture: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); 
+        }
+        [data-mode="dark"][data-texture="stripes"] { 
+            --texture: repeating-linear-gradient(45deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 10px, transparent 10px, transparent 20px); 
+        }
+        [data-mode="dark"][data-texture="paper"] { 
+            --texture: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.1"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.5"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>'); 
+        }
+        
+        [data-texture="grid"] body::after { background-size: 20px 20px; }
+
+        /* FONTS */
+        [data-font="sans"] { --font-main: 'Inter', sans-serif; }
+        [data-font="serif"] { --font-main: 'Merriweather', serif; }
+        [data-font="modern"] { --font-main: 'Outfit', sans-serif; }
+        [data-font="mono"] { --font-main: 'Space Mono', monospace; }
+        [data-font="poppins"] { --font-main: 'Poppins', sans-serif; }
+        [data-font="montserrat"] { --font-main: 'Montserrat', sans-serif; }
+        [data-font="quicksand"] { --font-main: 'Quicksand', sans-serif; }
+        [data-font="rubik"] { --font-main: 'Rubik', sans-serif; }
+
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+            pointer-events: none; background-image: var(--texture); z-index: 45;
+        }
+
+        /* OVERRIDES */
+        main { background-color: transparent !important; }
+        .bg-white { background-color: var(--bg-surface) !important; }
+        .bg-slate-50 { background-color: var(--bg-sub) !important; }
+        .text-slate-800, .text-slate-700 { color: var(--text-main) !important; }
+        .text-slate-600, .text-slate-500, .text-slate-400 { color: var(--text-muted) !important; }
+        .border-slate-300, .border-slate-200, .border-slate-100 { border-color: var(--border-color) !important; }
+        header { background-color: var(--color-header) !important; border-bottom: 1px solid var(--border-color); }
+        nav { background-color: var(--nav-bg) !important; border-color: var(--border-color) !important; }
+        .bg-indigo-600 { background-color: var(--color-primary) !important; }
+        .text-indigo-600, .text-indigo-700 { color: var(--color-primary) !important; }
+        .border-indigo-200 { border-color: var(--border-color) !important; }
+        .bg-indigo-50 { background-color: var(--bg-sub) !important; }
+        nav button { color: var(--text-muted) !important; }
+        nav .active { color: var(--color-primary) !important; }
+    </style>
+</head>
+<body class="w-full overflow-hidden flex flex-col selection:bg-indigo-200" data-mode="light" data-accent="default" data-texture="solid" data-font="sans">
+
+    <div id="toast-container"></div>
+
+    <!-- Header -->
+    <header class="text-white px-4 py-3 shadow-md z-10 shrink-0 flex flex-col">
+        <div class="flex justify-between items-start w-full">
+            <div>
+                <h1 class="text-lg font-bold">Merchant's Path</h1>
+                <p class="text-xs mt-0.5 opacity-80"><i class="fa-solid fa-location-dot mr-1"></i> <span id="header-location">Loading...</span></p>
+            </div>
+            <div class="text-center hidden sm:block">
+                <p class="text-xs uppercase font-semibold tracking-wider opacity-80">Date</p>
+                <p class="text-sm font-bold" id="header-date">Day 1, Spring, Yr 1</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs uppercase font-semibold tracking-wider opacity-80">Wallet</p>
+                <p class="text-xl font-bold text-yellow-300" id="header-cash">$0.00</p>
+            </div>
+        </div>
+        
+        <div class="w-full mt-3 bg-black bg-opacity-20 rounded-full h-1.5">
+            <div id="xp-bar" class="bg-blue-400 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between items-center w-full mt-1 text-[10px] font-semibold opacity-80">
+            <span id="level-text">Level 1</span>
+            <span id="xp-text">0 / 1000 XP</span>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto pb-28 relative">
+        
+        <!-- Market -->
+        <section id="tab-market" class="tab-content active p-4 space-y-4">
+            <div id="events-container" class="space-y-2 empty:hidden"></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Local Market</span><i class="fa-solid fa-scale-unbalanced text-slate-400"></i>
+                </h2>
+                <p class="text-sm text-slate-500 mb-4" id="market-description"></p>
+                <div id="market-items" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Cargo -->
+        <section id="tab-inventory" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Your Cargo</span><i class="fa-solid fa-boxes-stacked text-slate-400"></i>
+                </h2>
+                <div class="mb-4 mt-2">
+                    <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
+                        <span>Storage Space</span><span id="capacity-text">0 / 100</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 border border-slate-200">
+                        <div id="capacity-bar" class="bg-indigo-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="inventory-items" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Properties -->
+        <section id="tab-properties" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Local Properties</span><i class="fa-solid fa-shop text-slate-400"></i>
+                </h2>
+                <p class="text-sm text-slate-500 mb-4">Purchase businesses to automatically generate goods while you travel.</p>
+                <div id="property-items" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Contracts -->
+        <section id="tab-contracts" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Local Customers</span><i class="fa-solid fa-file-contract text-slate-400"></i>
+                </h2>
+                <p class="text-sm text-slate-500 mb-4">Fulfill specific orders for a premium payout. Jobs rotate over time.</p>
+                <div id="contracts-items" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Vehicles -->
+        <section id="tab-vehicles" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Dealership</span><i class="fa-solid fa-truck text-slate-400"></i>
+                </h2>
+                <div id="current-vehicle-info" class="mb-4 bg-indigo-50 border border-indigo-200 p-3 rounded-lg flex items-center gap-3"></div>
+                <div id="vehicles-items" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Travel -->
+        <section id="tab-travel" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-2 border-b pb-2 flex justify-between">
+                    <span>Travel Map</span><i class="fa-solid fa-map text-slate-400"></i>
+                </h2>
+                <p class="text-sm text-slate-500 mb-4">Travel to find better prices and advance time. <span class="font-bold text-indigo-500">Auto-saves on travel.</span></p>
+                <div id="travel-destinations" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="tab-settings" class="tab-content p-4 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 mb-4 border-b pb-2 flex justify-between">
+                    <span>Game Settings</span><i class="fa-solid fa-gear text-slate-400"></i>
+                </h2>
+                <div class="space-y-4">
+                    <button onclick="saveGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-sm active:scale-95 transition-all"><i class="fa-solid fa-floppy-disk mr-2"></i> Manual Save</button>
+                    <button onclick="loadGame()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-sm active:scale-95 transition-all"><i class="fa-solid fa-folder-open mr-2"></i> Load Save</button>
+
+                    <div class="pt-6 mt-4 border-t border-slate-100">
+                        <h3 class="font-bold text-slate-700 mb-2">Appearance</h3>
+                        <div class="grid grid-cols-1 gap-3 mb-4">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase">Display Mode</label>
+                                <select id="mode-select" onchange="setMode(this.value)" class="w-full mt-1 p-2 rounded-lg border bg-slate-50 text-sm focus:outline-none">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase flex justify-between">
+                                    <span>Accent Color</span>
+                                    <span class="text-indigo-500 font-bold">Premium $100</span>
+                                </label>
+                                <div id="accent-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2 mb-2"></div>
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase">Texture</label>
+                                <select id="texture-select" onchange="setTexture(this.value)" class="w-full mt-1 p-2 rounded-lg border bg-slate-50 text-sm focus:outline-none">
+                                    <option value="solid">Solid (None)</option>
+                                    <option value="paper">Paper</option>
+                                    <option value="grid">Grid</option>
+                                    <option value="stripes">Stripes</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase">Font / Typography</label>
+                                <select id="font-select" onchange="setFont(this.value)" class="w-full mt-1 p-2 rounded-lg border bg-slate-50 text-sm focus:outline-none">
+                                    <option value="sans">Default (Inter)</option>
+                                    <option value="poppins">Friendly (Poppins)</option>
+                                    <option value="montserrat">Elegant (Montserrat)</option>
+                                    <option value="quicksand">Rounded (Quicksand)</option>
+                                    <option value="rubik">Chunky (Rubik)</option>
+                                    <option value="modern">Modern (Outfit)</option>
+                                    <option value="serif">Classic (Merriweather)</option>
+                                    <option value="mono">Retro (Space Mono)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-4 border-t border-slate-100">
+                        <h3 class="font-bold text-slate-700 mb-2">Export / Import</h3>
+                        <textarea id="save-data-string" class="w-full p-3 rounded-lg border text-xs text-slate-600 mb-2 h-20 font-mono resize-none" placeholder="Paste save string here..."></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="exportSave()" class="flex-1 bg-slate-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-all text-sm"><i class="fa-solid fa-file-export mr-1"></i> Export</button>
+                            <button onclick="importSave()" class="flex-1 bg-slate-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-all text-sm"><i class="fa-solid fa-file-import mr-1"></i> Import</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-4 border-t border-slate-100">
+                        <button id="reset-btn" onclick="resetGame()" class="w-full bg-red-500 text-white font-bold py-4 rounded-xl shadow-sm active:scale-95 transition-all"><i class="fa-solid fa-skull mr-2"></i> Hard Reset (Wipe Save)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="border-t flex justify-between items-center h-[calc(4.5rem+env(safe-area-inset-bottom))] fixed bottom-0 w-full z-20 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] overflow-x-auto px-1">
+        <button onclick="switchTab('market')" class="nav-btn active flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-indigo-600 transition-colors">
+            <i class="fa-solid fa-store text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Market</span>
+        </button>
+        <button onclick="switchTab('inventory')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-box-open text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Cargo</span>
+        </button>
+        <button onclick="switchTab('properties')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-building text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Props</span>
+        </button>
+        <button onclick="switchTab('contracts')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-handshake text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Jobs</span>
+        </button>
+        <button onclick="switchTab('vehicles')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-truck text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Transport</span>
+        </button>
+        <button onclick="switchTab('travel')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-map-location-dot text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Travel</span>
+        </button>
+        <button onclick="switchTab('settings')" class="nav-btn flex-1 min-w-[50px] flex flex-col items-center justify-center h-full text-slate-400 hover:text-indigo-500 transition-colors">
+            <i class="fa-solid fa-gear text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">System</span>
+        </button>
+    </nav>
+
+    <script>
+        const SAVE_KEY = 'merchantsPathSave_v5';
+
+        const ITEMS = {
+            grain: { name: 'Grain', basePrice: 10, icon: 'fa-wheat-awn', color: 'text-yellow-600' },
+            wood: { name: 'Lumber', basePrice: 15, icon: 'fa-tree', color: 'text-green-800' },
+            fish: { name: 'Fish', basePrice: 25, icon: 'fa-fish', color: 'text-blue-500' },
+            iron: { name: 'Iron', basePrice: 40, icon: 'fa-cubes', color: 'text-slate-600' },
+            silk: { name: 'Silk', basePrice: 120, icon: 'fa-scroll', color: 'text-pink-500' },
+            spices: { name: 'Spices', basePrice: 250, icon: 'fa-pepper-hot', color: 'text-red-500' },
+            gems: { name: 'Gems', basePrice: 400, icon: 'fa-gem', color: 'text-teal-500' },
+            coffee: { name: 'Coffee', basePrice: 80, icon: 'fa-mug-hot', color: 'text-amber-800' },
+            machinery: { name: 'Machinery', basePrice: 150, icon: 'fa-gear', color: 'text-slate-400' },
+            coal: { name: 'Coal', basePrice: 30, icon: 'fa-fire', color: 'text-neutral-800' }
+        };
+
+        const TOWNS = {
+            oakwood: {
+                id: 'oakwood', name: 'Oakwood', desc: 'A lush agricultural village surrounded by vast farms.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 0c0 11-9 20-20 20 11 0 20 9 20 20 0-11 9-20 20-20-11 0-20-9-20-20z' fill='%23888888' fill-opacity='0.05'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 900, demand: 200, base: 900 }, wood: { supply: 300, demand: 300, base: 300 }, fish: { supply: 100, demand: 400, base: 100 }, iron: { supply: 100, demand: 500, base: 100 }, silk: { supply: 50, demand: 300, base: 50 }, spices: { supply: 20, demand: 500, base: 20 }, gems: { supply: 10, demand: 600, base: 10 }, coffee: { supply: 100, demand: 300, base: 100 }, machinery: { supply: 50, demand: 400, base: 50 }, coal: { supply: 80, demand: 300, base: 80 } }
+            },
+            ironforge: {
+                id: 'ironforge', name: 'Ironforge', desc: 'A rugged mining settlement at the base of the mountains.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='10' height='10' fill='%23888888' fill-opacity='0.05'/%3E%3Crect x='10' y='10' width='10' height='10' fill='%23888888' fill-opacity='0.05'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 100, demand: 600, base: 100 }, wood: { supply: 200, demand: 400, base: 200 }, fish: { supply: 80, demand: 300, base: 80 }, iron: { supply: 800, demand: 150, base: 800 }, silk: { supply: 40, demand: 200, base: 40 }, spices: { supply: 30, demand: 300, base: 30 }, gems: { supply: 200, demand: 200, base: 200 }, coffee: { supply: 40, demand: 500, base: 40 }, machinery: { supply: 300, demand: 200, base: 300 }, coal: { supply: 400, demand: 150, base: 400 } }
+            },
+            portazure: {
+                id: 'portazure', name: 'Port Azure', desc: 'A bustling coastal town relying on the sea for survival.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 20 Q 10 10, 20 20 T 40 20' stroke='%23888888' stroke-width='2' fill='none' stroke-opacity='0.1'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 200, demand: 500, base: 200 }, wood: { supply: 400, demand: 300, base: 400 }, fish: { supply: 700, demand: 100, base: 700 }, iron: { supply: 150, demand: 300, base: 150 }, silk: { supply: 150, demand: 300, base: 150 }, spices: { supply: 250, demand: 200, base: 250 }, gems: { supply: 80, demand: 400, base: 80 }, coffee: { supply: 200, demand: 300, base: 200 }, machinery: { supply: 100, demand: 400, base: 100 }, coal: { supply: 150, demand: 300, base: 150 } }
+            },
+            capitalcity: {
+                id: 'capitalcity', name: 'Capital City', desc: 'A wealthy metropolis where luxury goods are highly sought after.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cpath d='M15 0 L30 15 L15 30 L0 15 Z' fill='%23888888' fill-opacity='0.05'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 400, demand: 500, base: 400 }, wood: { supply: 100, demand: 600, base: 100 }, fish: { supply: 200, demand: 400, base: 200 }, iron: { supply: 200, demand: 300, base: 200 }, silk: { supply: 700, demand: 150, base: 700 }, spices: { supply: 100, demand: 600, base: 100 }, gems: { supply: 150, demand: 800, base: 150 }, coffee: { supply: 300, demand: 500, base: 300 }, machinery: { supply: 200, demand: 400, base: 200 }, coal: { supply: 100, demand: 500, base: 100 } }
+            },
+            frostholm: {
+                id: 'frostholm', name: 'Frostholm', desc: 'A freezing northern outpost surrounded by ancient pines.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 5L20 35M5 20L35 20M10 10L30 30M10 30L30 10' stroke='%23888888' stroke-width='1.5' stroke-opacity='0.1'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 50, demand: 800, base: 50 }, wood: { supply: 800, demand: 100, base: 800 }, fish: { supply: 300, demand: 300, base: 300 }, iron: { supply: 400, demand: 200, base: 400 }, silk: { supply: 20, demand: 400, base: 20 }, spices: { supply: 10, demand: 700, base: 10 }, gems: { supply: 50, demand: 400, base: 50 }, coffee: { supply: 50, demand: 800, base: 50 }, machinery: { supply: 100, demand: 300, base: 100 }, coal: { supply: 200, demand: 800, base: 200 } }
+            },
+            spicereef: {
+                id: 'spicereef', name: 'Spice Reef', desc: 'A tropical island known for growing rare, expensive spices.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='8' stroke='%23888888' stroke-width='1.5' fill='none' stroke-opacity='0.1'/%3E%3Ccircle cx='20' cy='20' r='2' fill='%23888888' fill-opacity='0.1'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 200, demand: 500, base: 200 }, wood: { supply: 200, demand: 400, base: 200 }, fish: { supply: 400, demand: 200, base: 400 }, iron: { supply: 50, demand: 400, base: 50 }, silk: { supply: 200, demand: 300, base: 200 }, spices: { supply: 600, demand: 100, base: 600 }, gems: { supply: 100, demand: 500, base: 100 }, coffee: { supply: 400, demand: 200, base: 400 }, machinery: { supply: 40, demand: 600, base: 40 }, coal: { supply: 30, demand: 400, base: 30 } }
+            },
+            emeraldpeak: {
+                id: 'emeraldpeak', name: 'Emerald Peak', desc: 'A high-altitude sanctuary famous for precious gemstones.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cpolygon points='15,0 30,15 15,30 0,15' stroke='%23888888' stroke-width='1' fill='none' stroke-opacity='0.15'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 100, demand: 500, base: 100 }, wood: { supply: 150, demand: 400, base: 150 }, fish: { supply: 80, demand: 350, base: 80 }, iron: { supply: 300, demand: 200, base: 300 }, silk: { supply: 200, demand: 300, base: 200 }, spices: { supply: 100, demand: 400, base: 100 }, gems: { supply: 800, demand: 100, base: 800 }, coffee: { supply: 100, demand: 400, base: 100 }, machinery: { supply: 150, demand: 300, base: 150 }, coal: { supply: 200, demand: 300, base: 200 } }
+            },
+            amberoasis: {
+                id: 'amberoasis', name: 'Amber Oasis', desc: 'A desert jewel surrounded by rich coffee plantations.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 40 Q 20 20, 40 40' stroke='%23888888' stroke-width='2' fill='none' stroke-opacity='0.1'/%3E%3Ccircle cx='20' cy='10' r='5' stroke='%23888888' stroke-width='1.5' fill='none' stroke-opacity='0.1'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 150, demand: 400, base: 150 }, wood: { supply: 50, demand: 600, base: 50 }, fish: { supply: 50, demand: 700, base: 50 }, iron: { supply: 100, demand: 400, base: 100 }, silk: { supply: 400, demand: 200, base: 400 }, spices: { supply: 300, demand: 250, base: 300 }, gems: { supply: 250, demand: 300, base: 250 }, coffee: { supply: 900, demand: 150, base: 900 }, machinery: { supply: 100, demand: 500, base: 100 }, coal: { supply: 50, demand: 400, base: 50 } }
+            },
+            tinkershollow: {
+                id: 'tinkershollow', name: 'Tinker\'s Hollow', desc: 'A smoggy valley driven by innovation and complex machinery.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='10' stroke='%23888888' stroke-width='2' stroke-dasharray='4 4' fill='none' stroke-opacity='0.15'/%3E%3Ccircle cx='20' cy='20' r='4' stroke='%23888888' stroke-width='1.5' fill='none' stroke-opacity='0.15'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 100, demand: 500, base: 100 }, wood: { supply: 200, demand: 400, base: 200 }, fish: { supply: 150, demand: 300, base: 150 }, iron: { supply: 500, demand: 300, base: 500 }, silk: { supply: 50, demand: 400, base: 50 }, spices: { supply: 80, demand: 300, base: 80 }, gems: { supply: 100, demand: 500, base: 100 }, coffee: { supply: 300, demand: 400, base: 300 }, machinery: { supply: 800, demand: 150, base: 800 }, coal: { supply: 600, demand: 400, base: 600 } }
+            },
+            obsidiancaldera: {
+                id: 'obsidiancaldera', name: 'Obsidian Caldera', desc: 'A volcanic region renowned for its endless veins of coal.',
+                bgSVG: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M10 40 L20 20 L30 40 Z' stroke='%23888888' stroke-width='1.5' fill='none' stroke-opacity='0.1'/%3E%3C/svg%3E",
+                marketBase: { grain: { supply: 50, demand: 700, base: 50 }, wood: { supply: 80, demand: 500, base: 80 }, fish: { supply: 50, demand: 600, base: 50 }, iron: { supply: 400, demand: 300, base: 400 }, silk: { supply: 30, demand: 500, base: 30 }, spices: { supply: 50, demand: 400, base: 50 }, gems: { supply: 300, demand: 200, base: 300 }, coffee: { supply: 100, demand: 500, base: 100 }, machinery: { supply: 200, demand: 400, base: 200 }, coal: { supply: 900, demand: 100, base: 900 } }
+            }
+        };
+
+        const BUSINESS_TYPES = {
+            grain: { id: 'grain', name: 'Wheat Farm', cost: 1000, baseRate: 5, max: 50, icon: 'fa-tractor', color: 'text-yellow-700' },
+            wood: { id: 'wood', name: 'Lumber Yard', cost: 1500, baseRate: 4, max: 40, icon: 'fa-tree', color: 'text-green-800' },
+            fish: { id: 'fish', name: 'Fishery', cost: 2000, baseRate: 4, max: 40, icon: 'fa-ship', color: 'text-blue-600' },
+            iron: { id: 'iron', name: 'Iron Mine', cost: 2500, baseRate: 3, max: 30, icon: 'fa-person-digging', color: 'text-slate-700' },
+            silk: { id: 'silk', name: 'Silk Loom', cost: 6000, baseRate: 2, max: 20, icon: 'fa-wand-magic-sparkles', color: 'text-pink-600' },
+            spices: { id: 'spices', name: 'Spice Plantation', cost: 10000, baseRate: 1, max: 10, icon: 'fa-leaf', color: 'text-red-700' },
+            gems: { id: 'gems', name: 'Gem Mine', cost: 15000, baseRate: 1, max: 8, icon: 'fa-gem', color: 'text-teal-700' },
+            coffee: { id: 'coffee', name: 'Coffee Plantation', cost: 4000, baseRate: 3, max: 30, icon: 'fa-mug-hot', color: 'text-amber-900' },
+            machinery: { id: 'machinery', name: 'Workshop', cost: 8000, baseRate: 2, max: 15, icon: 'fa-gear', color: 'text-slate-600' },
+            coal: { id: 'coal', name: 'Coal Mine', cost: 1800, baseRate: 6, max: 60, icon: 'fa-fire', color: 'text-neutral-900' }
+        };
+
+        function getBusinessStats(townId, itemId) {
+            const bt = BUSINESS_TYPES[itemId];
+            const baseSupply = TOWNS[townId].marketBase[itemId].base;
+            let mult = 1, envText = "Average Yield", envColor = "text-slate-500";
+            
+            if (baseSupply >= 700) { mult = 2.0; envText = "Exceptional Yield"; envColor = "text-green-600"; }
+            else if (baseSupply >= 400) { mult = 1.5; envText = "Good Yield"; envColor = "text-green-500"; }
+            else if (baseSupply >= 150) { mult = 1.0; }
+            else if (baseSupply >= 50) { mult = 0.5; envText = "Poor Yield"; envColor = "text-orange-500"; }
+            else { mult = 0.2; envText = "Terrible Yield"; envColor = "text-red-500"; }
+
+            return {
+                rate: Math.max(1, Math.round(bt.baseRate * mult)),
+                max: Math.max(5, Math.round(bt.max * mult)),
+                envText, envColor
+            };
+        }
+
+        const EVENT_TYPES = [
+            { id: 'shortage', name: 'Shortage', type: 'shortage', duration: 5, supplyMult: 0.2, demandMult: 1.8, msg: 'A sudden shortage drives up prices!', icon: 'fa-circle-exclamation' },
+            { id: 'boom', name: 'Trade Boom', type: 'boom', duration: 4, supplyMult: 1.5, demandMult: 2.0, msg: 'Merchants are flooding the area!', icon: 'fa-arrow-trend-up' }
+        ];
+
+        const VEHICLES = [
+            { id: 'backpack', name: 'Sturdy Backpack', capacity: 20, cost: 0, travelCost: 2, icon: 'fa-briefcase' },
+            { id: 'handcart', name: 'Wooden Handcart', capacity: 50, cost: 500, travelCost: 5, icon: 'fa-cart-shopping' },
+            { id: 'pickup', name: 'Pickup Truck', capacity: 150, cost: 3000, travelCost: 15, icon: 'fa-truck-pickup' },
+            { id: 'boxtruck', name: 'Box Truck', capacity: 400, cost: 10000, travelCost: 35, icon: 'fa-truck' },
+            { id: 'semitrailer', name: 'Semi-Trailer', capacity: 1000, cost: 35000, travelCost: 75, icon: 'fa-truck-moving' }
+        ];
+
+        const ACCENT_COLORS = [
+            { id: 'default', name: 'Indigo', levelReq: 1, cost: 0, hex: '#4f46e5' },
+            { id: 'ocean', name: 'Ocean', levelReq: 1, cost: 0, hex: '#0ea5e9' },
+            { id: 'crimson', name: 'Crimson', levelReq: 1, cost: 0, hex: '#e11d48' },
+            { id: 'forest', name: 'Forest', levelReq: 1, cost: 0, hex: '#16a34a' },
+            { id: 'neon', name: 'Neon', levelReq: 5, cost: 0, hex: '#f0abfc' },
+            { id: 'gold', name: 'Gold', levelReq: 10, cost: 0, hex: '#d97706' },
+            { id: 'cyberpunk', name: 'Cyberpunk', levelReq: 25, cost: 0, hex: '#ec4899' },
+            { id: 'pink', name: 'Pink', levelReq: 1, cost: 100, hex: '#ec4899' },
+            { id: 'orange', name: 'Orange', levelReq: 1, cost: 100, hex: '#f97316' },
+            { id: 'teal', name: 'Teal', levelReq: 1, cost: 100, hex: '#14b8a6' },
+            { id: 'cyan', name: 'Cyan', levelReq: 1, cost: 100, hex: '#06b6d4' },
+            { id: 'emerald', name: 'Emerald', levelReq: 1, cost: 100, hex: '#10b981' },
+            { id: 'fuchsia', name: 'Fuchsia', levelReq: 1, cost: 100, hex: '#d946ef' },
+            { id: 'slate', name: 'Slate', levelReq: 1, cost: 100, hex: '#64748b' },
+            { id: 'lime', name: 'Lime', levelReq: 1, cost: 100, hex: '#84cc16' },
+            { id: 'amber', name: 'Amber', levelReq: 1, cost: 100, hex: '#f59e0b' },
+            { id: 'violet', name: 'Violet', levelReq: 1, cost: 100, hex: '#8b5cf6' }
+        ];
+
+        const CUSTOMER_NAMES = ['Wealthy Noble', 'Local Merchant', 'Desperate Artisan', 'Guild Master', 'Ship Captain'];
+        const CALENDAR = { months: ['Spring', 'Summer', 'Autumn', 'Winter'], daysPerMonth: 30 };
+
+        /* STATE */
+        let state = {
+            player: {
+                level: 1, xp: 0, cash: 500.00, maxCapacity: 20, vehicleIndex: 0, location: 'oakwood',
+                inventory: { grain: 0, wood: 0, fish: 0, iron: 0, silk: 0, spices: 0, gems: 0, coffee: 0, machinery: 0, coal: 0 },
+                businesses: {}
+            },
+            settings: { mode: 'light', accent: 'default', texture: 'solid', font: 'sans' },
+            unlockedAccents: [],
+            date: { day: 1, month: 0, year: 1 },
+            activeEvents: [], marketPrices: {}, contracts: []
+        };
+        Object.keys(TOWNS).forEach(t => {
+            state.player.businesses[t] = {};
+            Object.keys(ITEMS).forEach(i => state.player.businesses[t][i] = { owned: false, stored: 0 });
+        });
+
+        let worldMarkets = JSON.parse(JSON.stringify(TOWNS));
+
+        /* CORE */
+        function initGame() {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) { loadGame(true); } else {
+                setMode('light', true); setAccent('default', true); setTexture('solid', true); setFont('sans', true);
+                calculatePrices(); updateBackground(); updateUI();
+                showToast("Welcome! Explore tabs to trade and travel.");
+            }
+            renderSettingsAppearance();
+        }
+
+        function updateBackground() {
+            const town = TOWNS[state.player.location];
+            document.body.style.backgroundImage = `url("${town.bgSVG}")`;
+        }
+
+        function saveGame(silent = false) {
+            localStorage.setItem(SAVE_KEY, JSON.stringify({ state, worldMarkets }));
+            if (!silent) showToast("Game Progress Saved!");
+        }
+
+        function loadGame(silent = false) {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(SAVE_KEY));
+                if (!parsed || !parsed.state || typeof parsed.state.player.cash === 'undefined') throw new Error("Bad Data");
+                
+                state = { ...state, ...parsed.state };
+                
+                // Ensure legacy saves populate missing data
+                if(!state.player.inventory.wood) state.player.inventory.wood = 0;
+                if(!state.player.inventory.fish) state.player.inventory.fish = 0;
+                if(!state.player.inventory.gems) state.player.inventory.gems = 0;
+                if(!state.player.inventory.coffee) state.player.inventory.coffee = 0;
+                if(!state.player.inventory.machinery) state.player.inventory.machinery = 0;
+                if(!state.player.inventory.coal) state.player.inventory.coal = 0;
+                
+                const oldBusinessMap = { oakwood: 'grain', ironforge: 'iron', portazure: 'fish', capitalcity: 'silk', frostholm: 'wood', spicereef: 'spices', emeraldpeak: 'gems', amberoasis: 'coffee', tinkershollow: 'machinery', obsidiancaldera: 'coal' };
+
+                Object.keys(TOWNS).forEach(t => {
+                    if(!state.player.businesses[t]) state.player.businesses[t] = {};
+                    
+                    // Migrate legacy single-business format to new format
+                    if (typeof state.player.businesses[t].owned !== 'undefined') {
+                        const l_owned = state.player.businesses[t].owned;
+                        const l_stored = state.player.businesses[t].stored;
+                        const l_item = oldBusinessMap[t];
+                        state.player.businesses[t] = {};
+                        if (l_item) state.player.businesses[t][l_item] = { owned: l_owned, stored: l_stored };
+                    }
+                    
+                    // Make sure all 10 slots exist
+                    Object.keys(ITEMS).forEach(i => {
+                        if(!state.player.businesses[t][i]) state.player.businesses[t][i] = { owned: false, stored: 0 };
+                    });
+
+                    if(!worldMarkets[t]) worldMarkets[t] = JSON.parse(JSON.stringify(TOWNS[t]));
+                    
+                    // Patch old saves with new items in existing towns
+                    Object.keys(ITEMS).forEach(i => {
+                        if(!worldMarkets[t].marketBase[i]) {
+                            worldMarkets[t].marketBase[i] = JSON.parse(JSON.stringify(TOWNS[t].marketBase[i] || {supply: 100, demand: 100, base: 100}));
+                        }
+                    });
+                });
+
+                worldMarkets = parsed.worldMarkets;
+                if(!state.unlockedAccents) state.unlockedAccents = [];
+                
+                // Backwards compatibility for old "theme" saves
+                if (state.settings.theme) {
+                    if (state.settings.theme === 'dark') {
+                        state.settings.mode = 'dark'; state.settings.accent = 'default';
+                    } else if (['ocean', 'crimson', 'forest', 'neon', 'gold', 'cyberpunk'].includes(state.settings.theme)) {
+                        state.settings.mode = 'light'; state.settings.accent = state.settings.theme;
+                    } else {
+                        state.settings.mode = 'light'; state.settings.accent = 'default';
+                    }
+                    delete state.settings.theme;
+                }
+                
+                if (!state.settings.font) state.settings.font = 'sans';
+
+                setMode(state.settings.mode, true);
+                setAccent(state.settings.accent, true);
+                setTexture(state.settings.texture, true);
+                setFont(state.settings.font, true);
+                calculatePrices(); updateBackground(); updateUI(); renderSettingsAppearance();
+                if (!silent) showToast("Game Loaded!");
+            } catch (e) {
+                if (!silent) showToast("Error loading game data.", true);
+            }
+        }
+
+        let resetArmed = false;
+        function resetGame() {
+            const btn = document.getElementById('reset-btn');
+            if (!resetArmed) {
+                resetArmed = true;
+                btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-2"></i> Tap Again to Wipe!';
+                btn.classList.replace('bg-red-500', 'bg-red-800'); btn.classList.add('animate-pulse');
+                setTimeout(() => { resetArmed = false; btn.innerHTML = '<i class="fa-solid fa-skull mr-2"></i> Hard Reset (Wipe Save)'; btn.classList.replace('bg-red-800', 'bg-red-500'); btn.classList.remove('animate-pulse'); }, 3000);
+            } else {
+                localStorage.removeItem(SAVE_KEY); location.reload();
+            }
+        }
+
+        async function exportSave() {
+            const text = document.getElementById('save-data-string');
+            const jsonString = JSON.stringify({ state, worldMarkets });
+            try {
+                // Compress the save string using LZString
+                text.value = LZString.compressToBase64(jsonString);
+                text.select(); document.execCommand('copy'); showToast("Exported & Copied!");
+            } catch (e) {
+                // Fallback in case of an error
+                text.value = btoa(encodeURIComponent(jsonString));
+                text.select(); document.execCommand('copy'); showToast("Exported & Copied!");
+            }
+        }
+
+        async function importSave() {
+            const text = document.getElementById('save-data-string').value.trim();
+            if (!text) return;
+            let parsed;
+            
+            try {
+                // Try decompressing using LZString
+                const decompressed = LZString.decompressFromBase64(text);
+                if (decompressed) {
+                    parsed = JSON.parse(decompressed);
+                } else {
+                    throw new Error("LZString returned null");
+                }
+            } catch (e) {
+                // Fallback: Attempt to parse as the old legacy uncompressed base64 format
+                try {
+                    parsed = JSON.parse(decodeURIComponent(atob(text)));
+                } catch (err) {
+                    return showToast("Invalid Save String", true);
+                }
+            }
+            
+            if (!parsed || !parsed.state) return showToast("Invalid Save String", true);
+            
+            localStorage.setItem(SAVE_KEY, JSON.stringify(parsed)); 
+            loadGame();
+            document.getElementById('save-data-string').value = ''; 
+            showToast("Imported Successfully!");
+        }
+
+        function addXP(amt) {
+            state.player.xp += Math.round(amt);
+            let req = state.player.level * 1000;
+            let leveled = false; let old = state.player.level;
+            while(state.player.xp >= req) { state.player.xp -= req; state.player.level++; leveled = true; req = state.player.level * 1000; }
+            if(leveled) {
+                showToast(`🎉 Level Up! Level ${state.player.level}! 🎉`);
+                ACCENT_COLORS.forEach(t => { if(t.cost === 0 && t.levelReq > old && t.levelReq <= state.player.level) setTimeout(()=>showToast(`🔓 Unlocked Accent: ${t.name}!`), 1000); });
+                renderSettingsAppearance();
+            }
+            updateXPUI();
+        }
+
+        function getPrice(itemId, townId) {
+            let mk = worldMarkets[townId].marketBase[itemId];
+            if(!mk) return ITEMS[itemId].basePrice; // Fallback
+            let sup = mk.supply, dem = mk.demand;
+            state.activeEvents.forEach(e => { if(e.townId === townId && e.item === itemId) { sup *= e.supplyMult; dem *= e.demandMult; }});
+            return Math.max(1, Math.round(ITEMS[itemId].basePrice * (dem / Math.max(1, sup)) * (1 + (Math.random()*0.1-0.05))));
+        }
+
+        function calculatePrices() {
+            state.marketPrices = {};
+            for(let id in ITEMS) state.marketPrices[id] = getPrice(id, state.player.location);
+        }
+
+        function getCap() { return Object.values(state.player.inventory).reduce((a,b)=>a+b, 0); }
+
+        function buyItem(id) {
+            const p = state.marketPrices[id];
+            if (state.player.cash < p) return showToast("Not enough cash!", true);
+            if (getCap() >= state.player.maxCapacity) return showToast("Inventory full!", true);
+            state.player.cash -= p; state.player.inventory[id]++;
+            worldMarkets[state.player.location].marketBase[id].supply -= 5;
+            worldMarkets[state.player.location].marketBase[id].demand += 2;
+            showToast(`Bought 1 ${ITEMS[id].name} for $${p}`, false, `buy-${id}`);
+            addXP(Math.ceil(p*0.1)); calculatePrices(); updateUI();
+        }
+
+        function sellItem(id) {
+            if (state.player.inventory[id] <= 0) return showToast("None to sell!", true);
+            const p = state.marketPrices[id];
+            state.player.cash += p; state.player.inventory[id]--;
+            worldMarkets[state.player.location].marketBase[id].supply += 5;
+            worldMarkets[state.player.location].marketBase[id].demand = Math.max(1, worldMarkets[state.player.location].marketBase[id].demand - 2);
+            showToast(`Sold 1 ${ITEMS[id].name} for $${p}`, false, `sell-${id}`);
+            addXP(Math.ceil(p*0.1)); calculatePrices(); updateUI();
+        }
+
+        function travel(townId) {
+            const cost = VEHICLES[state.player.vehicleIndex].travelCost;
+            if (state.player.cash < cost) return showToast(`Need $${cost} to travel!`, true);
+            state.player.cash -= cost; state.player.location = townId;
+            
+            // Advance Time
+            state.date.day++;
+            if(state.date.day > 30) { state.date.day = 1; state.date.month++; if(state.date.month>3){state.date.month=0; state.date.year++;}}
+            
+            // Evolve Econ & Biz
+            for(let t in worldMarkets) {
+                for(let i in worldMarkets[t].marketBase) {
+                    let mk = worldMarkets[t].marketBase[i];
+                    mk.supply += Math.round((mk.base - mk.supply)*0.1);
+                    mk.demand = Math.max(1, Math.min(2000, Math.round(mk.demand * (1 + (Math.random()*0.1-0.05)))));
+                }
+            }
+            for(let t in state.player.businesses) {
+                for(let i in state.player.businesses[t]) {
+                    let biz = state.player.businesses[t][i];
+                    if(biz.owned) {
+                        const stats = getBusinessStats(t, i);
+                        biz.stored = Math.min(stats.max, biz.stored + stats.rate);
+                    }
+                }
+            }
+
+            // Events
+            for(let i = state.activeEvents.length-1; i>=0; i--) {
+                state.activeEvents[i].daysLeft--;
+                if(state.activeEvents[i].daysLeft <= 0) state.activeEvents.splice(i,1);
+            }
+            if (Math.random() < 0.25 && state.activeEvents.length < 2) {
+                const proto = EVENT_TYPES[Math.floor(Math.random()*EVENT_TYPES.length)];
+                const townKeys = Object.keys(TOWNS);
+                const itemKeys = Object.keys(ITEMS);
+                const rTown = townKeys[Math.floor(Math.random()*townKeys.length)];
+                const rItem = itemKeys[Math.floor(Math.random()*itemKeys.length)];
+                state.activeEvents.push({...proto, daysLeft: proto.duration, townId: rTown, item: rItem});
+                showToast(`News: ${proto.name} in ${TOWNS[rTown].name}!`);
+            }
+
+            // Contracts
+            for(let i = state.contracts.length-1; i>=0; i--) {
+                state.contracts[i].daysLeft--;
+                if(state.contracts[i].daysLeft <= 0) state.contracts.splice(i,1);
+            }
+            if(Math.random() < 0.5 && state.contracts.length < 5) {
+                const townKeys = Object.keys(TOWNS);
+                const itemKeys = Object.keys(ITEMS);
+                const rTown = townKeys[Math.floor(Math.random()*townKeys.length)];
+                const rItem = itemKeys[Math.floor(Math.random()*itemKeys.length)];
+                state.contracts.push({
+                    id: 'c'+Date.now(), townId: rTown, item: rItem,
+                    customer: CUSTOMER_NAMES[Math.floor(Math.random()*CUSTOMER_NAMES.length)],
+                    amount: Math.floor(Math.random()*15)+5,
+                    pricePerUnit: Math.round(ITEMS[rItem].basePrice * (1.3 + Math.random()*0.7)),
+                    daysLeft: Math.floor(Math.random()*5)+3
+                });
+            }
+
+            calculatePrices(); addXP(50); saveGame(true); updateBackground(); updateUI();
+            showToast(`Traveled to ${TOWNS[townId].name} (-$${cost})`); switchTab('market');
+        }
+
+        function buyBusiness(townId, itemId) {
+            const bt = BUSINESS_TYPES[itemId];
+            if (state.player.cash < bt.cost) return showToast("Not enough cash!", true);
+            state.player.cash -= bt.cost; state.player.businesses[townId][itemId].owned = true;
+            addXP(bt.cost*0.1); showToast(`Purchased ${bt.name}!`); updateUI();
+        }
+
+        function collectResources(townId, itemId) {
+            const biz = state.player.businesses[townId][itemId];
+            if(biz.stored <= 0) return showToast("Nothing to collect.");
+            const stats = getBusinessStats(townId, itemId);
+            const space = state.player.maxCapacity - getCap();
+            if(space <= 0) return showToast("Inventory Full!", true);
+            const amt = Math.min(biz.stored, space);
+            state.player.inventory[itemId] += amt; biz.stored -= amt;
+            showToast(`Collected ${amt} ${ITEMS[itemId].name}.`); updateUI();
+        }
+        
+        function buyVehicle(idx) {
+            const v = VEHICLES[idx];
+            if (state.player.cash < v.cost) return showToast("Not enough cash!", true);
+            state.player.cash -= v.cost; state.player.vehicleIndex = idx; state.player.maxCapacity = v.capacity;
+            addXP(v.cost*0.1); showToast(`Upgraded to ${v.name}!`); updateUI();
+        }
+
+        function fulfillContract(id) {
+            const idx = state.contracts.findIndex(c => c.id === id);
+            const c = state.contracts[idx];
+            if(state.player.location !== c.townId) return showToast("Wrong town!", true);
+            if(state.player.inventory[c.item] < c.amount) return showToast("Missing items!", true);
+            state.player.inventory[c.item] -= c.amount;
+            const pay = c.amount * c.pricePerUnit; state.player.cash += pay;
+            addXP(pay*0.2); state.contracts.splice(idx, 1);
+            showToast(`Job done! Earned $${pay}`); updateUI();
+        }
+
+        /* RENDERING */
+        function updateUI() {
+            document.getElementById('header-cash').innerText = `$${Math.floor(state.player.cash)}`;
+            document.getElementById('header-location').innerText = TOWNS[state.player.location].name;
+            document.getElementById('header-date').innerText = `Day ${state.date.day}, ${CALENDAR.months[state.date.month]}, Yr ${state.date.year}`;
+            
+            const cap = getCap(); const max = state.player.maxCapacity;
+            document.getElementById('capacity-text').innerText = `${cap} / ${max}`;
+            document.getElementById('capacity-bar').style.width = `${Math.min(100, (cap/max)*100)}%`;
+            document.getElementById('capacity-bar').className = `h-2 rounded-full transition-all duration-300 ${cap>max*0.9 ? 'bg-red-500' : 'bg-indigo-500'}`;
+
+            updateXPUI(); renderMarket(); renderInventory(); renderProperties(); renderVehicles(); renderTravel(); renderContracts();
+        }
+
+        function updateXPUI() {
+            const lvl = state.player.level; const req = lvl * 1000;
+            document.getElementById('level-text').innerText = `Level ${lvl}`;
+            document.getElementById('xp-text').innerText = `${state.player.xp} / ${req} XP`;
+            document.getElementById('xp-bar').style.width = `${Math.min(100, (state.player.xp/req)*100)}%`;
+        }
+
+        function renderSettingsAppearance() {
+            renderAccentGrid();
+            document.getElementById('mode-select').value = state.settings.mode;
+            document.getElementById('texture-select').value = state.settings.texture;
+            document.getElementById('font-select').value = state.settings.font;
+        }
+
+        function renderAccentGrid() {
+            const grid = document.getElementById('accent-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            ACCENT_COLORS.forEach(c => {
+                const isUnlocked = c.cost === 0 || (state.unlockedAccents && state.unlockedAccents.includes(c.id));
+                const isLevelLocked = c.levelReq > state.player.level;
+                const isActive = state.settings.accent === c.id;
+                
+                let content = '';
+                let onclick = '';
+                let extraClasses = '';
+                
+                if (isActive) {
+                    content = '<i class="fa-solid fa-check text-white text-lg drop-shadow-md"></i>';
+                    extraClasses = 'border-[3px] border-white shadow-lg scale-110 z-10';
+                    onclick = '';
+                } else if (isLevelLocked) {
+                    content = `<div class="flex flex-col items-center text-white drop-shadow-md"><i class="fa-solid fa-lock text-xs"></i><span class="text-[9px] font-bold mt-0.5">Lv${c.levelReq}</span></div>`;
+                    extraClasses = 'opacity-50 cursor-not-allowed';
+                    onclick = `showToast('Unlocks at Level ${c.levelReq}!', true)`;
+                } else if (!isUnlocked) {
+                    content = `<div class="flex flex-col items-center text-white drop-shadow-md"><i class="fa-solid fa-lock text-xs"></i><span class="text-[9px] font-bold mt-0.5">$${c.cost}</span></div>`;
+                    extraClasses = 'cursor-pointer hover:scale-105 transition-transform border border-slate-300';
+                    onclick = `buyAccent('${c.id}')`;
+                } else {
+                    content = '';
+                    extraClasses = 'cursor-pointer hover:scale-105 transition-transform border border-slate-300';
+                    onclick = `setAccent('${c.id}'); renderSettingsAppearance();`;
+                }
+                
+                grid.innerHTML += `<div onclick="${onclick}" class="w-full aspect-square rounded-xl flex items-center justify-center relative ${extraClasses}" style="background-color: ${c.hex};" title="${c.name}">${content}</div>`;
+            });
+        }
+
+        function buyAccent(id) {
+            const acc = ACCENT_COLORS.find(a => a.id === id);
+            if (!acc) return;
+            if (state.player.cash < acc.cost) return showToast("Not enough cash!", true);
+            state.player.cash -= acc.cost;
+            if (!state.unlockedAccents) state.unlockedAccents = [];
+            if (!state.unlockedAccents.includes(id)) state.unlockedAccents.push(id);
+            setAccent(id);
+            updateUI(); // Updates the cash topbar
+            renderSettingsAppearance();
+            showToast(`Unlocked ${acc.name} Accent!`);
+        }
+
+        function renderMarket() {
+            const m = document.getElementById('market-items'); m.innerHTML = '';
+            document.getElementById('market-description').innerText = TOWNS[state.player.location].desc;
+            
+            const evC = document.getElementById('events-container'); evC.innerHTML = '';
+            state.activeEvents.filter(e => e.townId === state.player.location).forEach(e => {
+                evC.innerHTML += `<div class="p-3 rounded-xl text-white ${e.type==='boom'?'bg-indigo-600':'bg-rose-600'} flex gap-3"><i class="fa-solid ${e.icon} text-2xl mt-1 opacity-80"></i><div><h4 class="font-bold text-sm uppercase">${e.name}</h4><p class="text-sm opacity-90">${e.msg}</p></div></div>`;
+            });
+
+            for(let id in ITEMS) {
+                const it = ITEMS[id]; const p = state.marketPrices[id];
+                const sup = worldMarkets[state.player.location].marketBase[id]?.supply || 100;
+                const dem = worldMarkets[state.player.location].marketBase[id]?.demand || 100;
+                let stat = "Stable", col = "text-slate-500";
+                if(sup>dem*1.5){ stat="Abundant"; col="text-green-500"; } else if(dem>sup*1.5){ stat="Scarce"; col="text-red-500"; }
+                
+                m.innerHTML += `<div class="flex items-center justify-between p-3 border rounded-lg bg-slate-50">
+                    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border"><i class="fa-solid ${it.icon} ${it.color}"></i></div>
+                    <div><h3 class="font-bold leading-tight">${it.name}</h3><p class="text-xs font-medium ${col}">${stat}</p></div></div>
+                    <div class="flex items-center gap-4"><p class="font-bold">$${p}</p>
+                    <button onclick="buyItem('${id}')" class="bg-indigo-600 active:bg-indigo-700 text-white w-10 h-10 rounded-xl flex items-center justify-center"><i class="fa-solid fa-plus"></i></button></div></div>`;
+            }
+        }
+
+        function renderInventory() {
+            const m = document.getElementById('inventory-items'); m.innerHTML = '';
+            let has = false;
+            for(let id in state.player.inventory) {
+                if(state.player.inventory[id]>0) {
+                    has = true; const it = ITEMS[id]; const p = state.marketPrices[id];
+                    m.innerHTML += `<div class="flex justify-between p-3 border rounded-lg bg-white">
+                        <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border"><i class="fa-solid ${it.icon} ${it.color}"></i></div>
+                        <div><h3 class="font-bold">${it.name} <span class="text-indigo-600 ml-1">x${state.player.inventory[id]}</span></h3><p class="text-xs text-slate-500">Value: $${p} ea</p></div></div>
+                        <button onclick="sellItem('${id}')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold active:scale-95">Sell</button></div>`;
+                }
+            }
+            if(!has) m.innerHTML = `<div class="text-center py-6 text-slate-400"><i class="fa-solid fa-wind text-2xl mb-2"></i><p>Your cargo is empty.</p></div>`;
+        }
+
+        function renderProperties() {
+            const m = document.getElementById('property-items'); m.innerHTML = '';
+            const tId = state.player.location;
+            
+            Object.keys(BUSINESS_TYPES).forEach(itemId => {
+                const bt = BUSINESS_TYPES[itemId];
+                const bizS = state.player.businesses[tId][itemId];
+                const stats = getBusinessStats(tId, itemId);
+                
+                if(!bizS.owned) {
+                    m.innerHTML += `<div class="p-3 border rounded-xl bg-white flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <div class="flex gap-3 items-center"><div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-xl border"><i class="fa-solid ${bt.icon} ${bt.color}"></i></div>
+                            <div><h3 class="font-bold text-sm leading-tight">${bt.name}</h3><p class="text-[10px] font-bold ${stats.envColor} mt-0.5">${stats.envText}</p></div></div>
+                            <button onclick="buyBusiness('${tId}', '${itemId}')" class="bg-indigo-600 active:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap">Buy $${bt.cost}</button>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 font-medium px-1">
+                            <span>Yield: ${stats.rate} ${ITEMS[itemId].name}/day</span><span>Max: ${stats.max}</span>
+                        </div>
+                    </div>`;
+                } else {
+                    m.innerHTML += `<div class="p-3 border rounded-xl border-green-200 bg-green-50 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <div class="flex gap-3 items-center"><div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm"><i class="fa-solid ${bt.icon} ${bt.color}"></i></div>
+                            <div><h3 class="font-bold text-sm leading-tight">${bt.name}</h3><p class="text-[10px] font-bold text-green-700 mt-0.5">Stored: ${bizS.stored} / ${stats.max}</p></div></div>
+                            <button onclick="collectResources('${tId}', '${itemId}')" class="${bizS.stored>0?'bg-green-600 active:bg-green-700':'bg-slate-300'} text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap">Collect</button>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 font-medium px-1">
+                            <span>Yield: ${stats.rate} ${ITEMS[itemId].name}/day</span><span class="${stats.envColor}">${stats.envText}</span>
+                        </div>
+                    </div>`;
+                }
+            });
+        }
+
+        function renderVehicles() {
+            const m = document.getElementById('vehicles-items'); m.innerHTML = '';
+            const cur = VEHICLES[state.player.vehicleIndex];
+            document.getElementById('current-vehicle-info').innerHTML = `<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-indigo-700 shadow-sm"><i class="fa-solid ${cur.icon} text-xl"></i></div><div><h3 class="font-bold text-indigo-900 leading-tight">Current: ${cur.name}</h3><p class="text-xs text-indigo-700 font-medium mt-1">Capacity: ${cur.capacity} | Travel Fee: $${cur.travelCost}</p></div>`;
+            
+            VEHICLES.forEach((v, i) => {
+                if(i <= state.player.vehicleIndex) return;
+                m.innerHTML += `<div class="p-3 border rounded-xl flex justify-between bg-white">
+                    <div class="flex gap-3"><div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700"><i class="fa-solid ${v.icon}"></i></div>
+                    <div><h3 class="font-bold leading-tight">${v.name}</h3><p class="text-xs mt-0.5">Cap: ${v.capacity} | Fee: $${v.travelCost}</p></div></div>
+                    <button onclick="buyVehicle(${i})" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-bold">$${v.cost}</button></div>`;
+            });
+        }
+
+        function renderTravel() {
+            const m = document.getElementById('travel-destinations'); m.innerHTML = '';
+            for(let id in TOWNS) {
+                if(id === state.player.location) continue;
+                const cost = VEHICLES[state.player.vehicleIndex].travelCost;
+                let badges = '';
+                
+                const ownsAnyProperty = Object.values(state.player.businesses[id]).some(b => b.owned);
+                if(ownsAnyProperty) badges += `<span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-house"></i></span>`;
+                
+                if(state.activeEvents.filter(e=>e.townId===id).length>0) badges += `<span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-bolt"></i></span>`;
+                if(state.contracts.filter(c=>c.townId===id).length>0) badges += `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-file-signature"></i></span>`;
+
+                m.innerHTML += `<div class="p-4 border rounded-xl bg-white flex justify-between items-center">
+                    <div><h3 class="font-bold">${TOWNS[id].name}</h3><div class="flex gap-1 mt-1">${badges}</div></div>
+                    <button onclick="travel('${id}')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold">Go (-$${cost})</button></div>`;
+            }
+        }
+
+        function renderContracts() {
+            const m = document.getElementById('contracts-items'); m.innerHTML = '';
+            const loc = state.contracts.filter(c => c.townId === state.player.location);
+            if(!loc.length) return m.innerHTML = `<div class="text-center py-8 text-slate-400"><i class="fa-solid fa-file-signature text-4xl mb-2 opacity-50"></i><p>No local customers right now.</p></div>`;
+            
+            loc.forEach(c => {
+                const it = ITEMS[c.item]; const pay = c.amount * c.pricePerUnit; const has = state.player.inventory[c.item] >= c.amount;
+                m.innerHTML += `<div class="flex flex-col p-4 border rounded-xl bg-indigo-50 border-indigo-200 gap-3">
+                    <div class="flex justify-between items-start"><div><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-user-tie text-indigo-500"></i> ${c.customer}</h3>
+                    <p class="text-xs font-medium mt-1"><i class="fa-regular fa-clock"></i> Expires in ${c.daysLeft}d</p></div>
+                    <div class="text-right"><p class="text-lg font-bold text-green-600">+$${pay}</p><p class="text-xs text-slate-500">($${c.pricePerUnit}/ea)</p></div></div>
+                    <div class="flex items-center justify-between mt-2 pt-3 border-t border-indigo-100">
+                    <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-white flex items-center justify-center"><i class="fa-solid ${it.icon} ${it.color} text-sm"></i></div><span class="text-sm font-bold text-slate-700">${c.amount}x ${it.name}</span></div>
+                    <button onclick="fulfillContract('${c.id}')" class="${has?'bg-indigo-600':'bg-slate-300'} text-white px-4 py-2 rounded-xl text-sm font-bold">${has?'Deliver':'Missing'}</button></div></div>`;
+            });
+        }
+
+        /* UTILS */
+        function setMode(md, sl = false) { state.settings.mode = md; document.body.setAttribute('data-mode', md); if(!sl) saveGame(true); }
+        function setAccent(ac, sl = false) { state.settings.accent = ac; document.body.setAttribute('data-accent', ac); if(!sl) saveGame(true); }
+        function setTexture(tx, sl = false) { state.settings.texture = tx; document.body.setAttribute('data-texture', tx); document.getElementById('texture-select').value=tx; if(!sl) saveGame(true); }
+        function setFont(f, sl = false) { state.settings.font = f; document.body.setAttribute('data-font', f); document.getElementById('font-select').value=f; if(!sl) saveGame(true); }
+        function switchTab(id) {
+            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-indigo-600'); b.classList.add('text-slate-400'); });
+            event.currentTarget.classList.replace('text-slate-400', 'text-indigo-600');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${id}`).classList.add('active'); updateUI();
+        }
+        function showToast(msg, err=false, gid=null) {
+            const c = document.getElementById('toast-container');
+            const dup = Array.from(c.children).find(t => (gid && t.dataset.gid===gid) || (!gid && t.dataset.msg===msg));
+            if(dup) {
+                let cnt = parseInt(dup.dataset.cnt)+1; dup.dataset.cnt = cnt;
+                dup.innerHTML = `<i class="fa-solid ${err?'fa-triangle-exclamation text-red-400':'fa-circle-info text-blue-400'} mr-2"></i> ${msg} <span class="ml-2 font-black text-yellow-400 text-lg">x${cnt}</span>`;
+                clearTimeout(parseInt(dup.dataset.tid)); dup.dataset.tid = setTimeout(()=>{if(dup.parentNode===c)c.removeChild(dup);},2500); return;
+            }
+            const t = document.createElement('div'); t.className = `toast ${err?'!bg-red-900 border border-red-700':'border border-indigo-800'}`;
+            t.innerHTML = `<i class="fa-solid ${err?'fa-triangle-exclamation text-red-400':'fa-circle-info text-blue-400'} mr-2"></i> ${msg}`;
+            t.dataset.msg = msg; if(gid) t.dataset.gid = gid; t.dataset.cnt = 1; c.appendChild(t);
+            t.dataset.tid = setTimeout(()=>{if(t.parentNode===c)c.removeChild(t);},2500);
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
